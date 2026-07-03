@@ -141,18 +141,25 @@ app.post("/products", authMiddleware, adminMiddleware, async (req, res) => {
 app.put("/products/:id", authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+    if (!id) {
+      return res.status(400).json({ error: "ID do produto é obrigatório." });
+    }
+
     const { name, description, price, stock, imageUrl, categoryId } = req.body;
 
+    // build data object only with provided fields to satisfy Prisma exactOptionalPropertyTypes
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (price !== undefined) updateData.price = Number(price);
+    if (stock !== undefined) updateData.stock = Number(stock);
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
+
     const updatedProduct = await prisma.product.update({
-      where: { id },
-      data: {
-        name,
-        description,
-        price: price !== undefined ? Number(price) : undefined,
-        stock: stock !== undefined ? Number(stock) : undefined,
-        imageUrl,
-        categoryId,
-      },
+      where: { id: String(id) },
+      data: updateData,
     });
 
     res.json(updatedProduct);
@@ -174,8 +181,12 @@ app.delete(
         ? req.params.id[0]
         : req.params.id;
 
+      if (!id) {
+        return res.status(400).json({ error: "ID do produto é obrigatório." });
+      }
+
       await prisma.product.delete({
-        where: { id },
+        where: { id: String(id) },
       });
 
       res.json({ message: "Produto removido com sucesso do catálogo!" });
@@ -221,7 +232,7 @@ app.post("/orders", authMiddleware, async (req, res) => {
     let totalOrderPrice = 0;
     const orderItemsData: {
       productId: string;
-      quantity: any;
+      quantity: number;
       price: number;
     }[] = [];
 
@@ -277,11 +288,14 @@ app.post("/orders", authMiddleware, async (req, res) => {
 
     res.status(201).json({
       message: "Pedido realizado com sucesso! 🛒",
-      order: newOrder,
+      order: {
+        ...newOrder,
+        total: totalOrderPrice,
+      },
       total: totalOrderPrice,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Erro crítico na criação de pedidos:", error);
     res.status(500).json({ error: "Erro ao processar o pedido." });
   }
 });
@@ -321,6 +335,60 @@ app.get("/orders/me", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "Erro ao buscar o histórico de pedidos." });
   }
 });
+
+app.get("/orders", authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const orders = await prisma.order.findMany({
+      include: {
+        user: { select: { name: true, email: true } },
+        items: {
+          include: { product: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const formattedOrders = orders.map((order) => ({
+      ...order,
+      total: order.totalAmount,
+    }));
+
+    res.json(formattedOrders);
+  } catch (error) {
+    console.error("Erro ao buscar todos os pedidos:", error);
+    res.status(500).json({ error: "Erro ao buscar a lista de pedidos." });
+  }
+});
+
+app.get(
+  "/dashboard/stats",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res) => {
+    try {
+      const totalProducts = await prisma.product.count();
+
+      const totalOrders = await prisma.order.count({
+        where: {
+          totalAmount: { gt: 0 },
+        },
+      });
+
+      const totalCustomers = await prisma.user.count({
+        where: { role: "USER" },
+      });
+
+      res.json({
+        totalProducts,
+        totalOrders,
+        totalCustomers,
+      });
+    } catch (error) {
+      console.error("Erro ao carregar estatísticas do dashboard:", error);
+      res.status(500).json({ error: "Erro ao carregar métricas." });
+    }
+  },
+);
 
 const PORT = 3000;
 app.listen(PORT, () => {
