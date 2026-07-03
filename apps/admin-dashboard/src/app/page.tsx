@@ -1,22 +1,37 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
 import axios from "axios";
-import { useState } from "react";
-import { Lock, Mail, Loader2 } from "lucide-react";
+import { ThemeToggle } from "./components/ThemeToggle";
+import { LoginForm } from "./components/LoginForm";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 export default function LoginPage() {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState(false);
 
-  const onSubmit = async (data: any) => {
+  useEffect(() => {
+    const checkTheme = () => {
+      const isDarkMode =
+        document.documentElement.classList.contains("dark") ||
+        localStorage.getItem("theme") === "dark";
+      setIsDark(isDarkMode);
+    };
+
+    checkTheme();
+
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleLoginSubmit = async (data: any) => {
     setLoading(true);
     setApiError(null);
 
@@ -42,85 +57,52 @@ export default function LoginPage() {
       window.location.href = "/dashboard";
     } catch (error: any) {
       console.error(error);
-      const errorMessage =
-        error.response?.data?.error || "Erro ao conectar com o servidor.";
-      setApiError(errorMessage);
+      setApiError(
+        error.response?.data?.message ||
+          "Erro ao conectar com o servidor. Tente novamente.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4 text-white">
-      <div className="w-full max-w-md space-y-8 bg-zinc-900 p-8 rounded-2xl border border-zinc-800 shadow-xl">
+    <div
+      className={`min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-200 ${
+        isDark ? "bg-zinc-950 text-zinc-100" : "bg-zinc-50 text-zinc-900"
+      }`}
+    >
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-violet-600 text-white">
-            <Lock className="h-6 w-6" />
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-600 font-black text-xl text-white shadow-lg shadow-violet-600/20">
+            E
           </div>
-          <h2 className="text-2xl font-bold tracking-tight">Painel Admin</h2>
-          <p className="text-sm text-zinc-400">
-            Entre com as suas credenciais de administrador
+          <h1 className="text-2xl font-bold tracking-tight">
+            Painel Administrativo
+          </h1>
+          <p
+            className={`text-sm ${isDark ? "text-zinc-400" : "text-zinc-500"}`}
+          >
+            Entre com suas credenciais de administrador para gerenciar a loja.
           </p>
         </div>
 
-        {apiError && (
-          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-lg text-center">
-            {apiError}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">E-mail</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3.5 h-5 w-5 text-zinc-500" />
-              <input
-                {...register("email", { required: "O e-mail é obrigatório" })}
-                type="email"
-                placeholder="exemplo@admin.com"
-                className="w-full pl-10 pr-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:border-violet-500 transition text-sm text-zinc-200 placeholder-zinc-600"
-              />
-            </div>
-            {errors.email && (
-              <p className="text-xs text-red-400">
-                {String(errors.email.message)}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-300">Senha</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3.5 h-5 w-5 text-zinc-500" />
-              <input
-                {...register("password", { required: "A senha é obrigatória" })}
-                type="password"
-                placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:outline-none focus:border-violet-500 transition text-sm text-zinc-200 placeholder-zinc-600"
-              />
-            </div>
-            {errors.password && (
-              <p className="text-xs text-red-400">
-                {String(errors.password.message)}
-              </p>
-            )}
-          </div>
-
-          <button
-            disabled={loading}
-            type="submit"
-            className="w-full bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white font-medium py-3 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Autenticando...
-              </>
-            ) : (
-              "Entrar no Painel"
-            )}
-          </button>
-        </form>
+        <div
+          className={`border p-6 md:p-8 rounded-2xl transition-colors duration-200 shadow-xl ${
+            isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
+          }`}
+        >
+          <LoginForm
+            isDark={isDark}
+            loading={loading}
+            apiError={apiError}
+            onSubmit={handleLoginSubmit}
+          />
+        </div>
       </div>
     </div>
   );
