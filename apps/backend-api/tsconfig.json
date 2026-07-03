@@ -42,6 +42,6 @@
     "moduleDetection": "force",
     "skipLibCheck": true
   },
-  "include": ["**/*.{ts,tsx,js,jsx}"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "prisma"]
 }
