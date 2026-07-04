@@ -46,6 +46,26 @@ export default function OrdersAdminPage() {
     loadOrders();
   }, []);
 
+  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const token = localStorage.getItem("@ecommerce:token");
+      await axios.patch(
+        `${API_URL}/orders/${orderId}/status`,
+        { status: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      setOrders((prevOrders: any) =>
+        prevOrders.map((o: any) =>
+          o.id === orderId ? { ...o, status: newStatus } : o,
+        ),
+      );
+    } catch (error) {
+      console.error("Erro ao atualizar status", error);
+      alert("Não foi possível atualizar o status do pedido.");
+    }
+  };
+
   if (loading) {
     return (
       <div
@@ -78,7 +98,12 @@ export default function OrdersAdminPage() {
 
         <div className="space-y-6">
           {orders.map((order: any) => (
-            <OrderCard key={order.id} order={order} isDark={isDark} />
+            <OrderCard
+              key={order.id}
+              order={order}
+              isDark={isDark}
+              onStatusChange={handleUpdateStatus}
+            />
           ))}
 
           {orders.length === 0 && (

@@ -9,6 +9,7 @@ import { OrderSuccessState } from "./components/OrderSuccessState";
 import { CheckoutAuthForm } from "./components/CheckoutAuthForm";
 import { CheckoutSummary } from "./components/CheckoutSummary";
 import { PaymentForm } from "./components/PaymentForm";
+import { LogoutButton } from "./components/LogoutButton";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -108,8 +109,28 @@ export default function CheckoutPage() {
   };
 
   const handleFinalizeOrder = async (paymentData: any) => {
-    if (!token) return;
+    const currentToken = localStorage.getItem("@store:token");
+
+    if (!currentToken) {
+      alert("Sua sessão expirou. Por favor, faça login novamente.");
+      window.location.reload();
+      return;
+    }
     setLoading(true);
+
+    const isCardValid =
+      paymentData.method === "card" &&
+      paymentData.cardNumber === "1234123412341234";
+    const isPixValid = paymentData.method === "pix";
+
+    if (!isCardValid && !isPixValid) {
+      alert(
+        "Pagamento recusado: Dados do cartão inválidos ou erro no processamento.",
+      );
+      setLoading(false);
+      return;
+    }
+
     try {
       const orderItems = cart.map((item: any) => ({
         productId: item.product.id,
@@ -120,26 +141,28 @@ export default function CheckoutPage() {
         `${API_URL}/orders`,
         {
           items: orderItems,
-          paymentMethod: paymentData.method, // "card" ou "pix"
-          paymentDetails:
-            paymentData.method === "card"
-              ? {
-                  cardName: paymentData.cardName,
-                }
-              : null,
+          paymentMethod: paymentData.method,
+          status: "PAID",
         },
-        { headers: { Authorization: `Bearer ${token}` } },
+        { headers: { Authorization: `Bearer ${currentToken}` } },
       );
 
       localStorage.removeItem("@store:cart");
       setCart([]);
       setOrderSuccess(true);
     } catch (error) {
-      console.error("Erro ao processar pedido e pagamento", error);
-      alert("Houve um erro ao processar o seu pagamento.");
+      console.error("Erro ao processar pedido", error);
+      alert("Houve um erro no servidor.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("@store:token");
+    localStorage.removeItem("@store:user");
+    setToken(null);
+    window.location.reload();
   };
 
   if (orderSuccess) {
@@ -149,6 +172,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col lg:flex-row transition-colors duration-200">
       <div className="flex-1 p-6 md:p-12 lg:p-20 flex flex-col justify-center max-w-2xl mx-auto w-full space-y-8">
+        {/* Topo da página com navegação e ações */}
         <div className="flex items-center justify-between w-full pb-4 border-b border-zinc-200 dark:border-zinc-800">
           <button
             onClick={() => (window.location.href = "/")}
@@ -157,7 +181,13 @@ export default function CheckoutPage() {
             <ArrowLeft className="h-4 w-4" /> Voltar para a loja
           </button>
 
-          <ThemeToggle />
+          {/* Grupo de botões alinhados à direita */}
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+
+            {/* ✨ Exibe o botão de Logout apenas se o usuário estiver logado */}
+            {token && <LogoutButton onLogout={handleLogout} />}
+          </div>
         </div>
 
         {!token ? (

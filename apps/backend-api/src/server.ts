@@ -148,7 +148,6 @@ app.put("/products/:id", authMiddleware, adminMiddleware, async (req, res) => {
 
     const { name, description, price, stock, imageUrl, categoryId } = req.body;
 
-    // build data object only with provided fields to satisfy Prisma exactOptionalPropertyTypes
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
@@ -217,7 +216,7 @@ app.post("/orders", authMiddleware, async (req, res) => {
   try {
     const userId = (req as express.Request & { user?: { id: string } }).user
       ?.id;
-    const { items } = req.body;
+    const { items, status } = req.body;
 
     if (!userId) {
       return res.status(401).json({ error: "Usuário não identificado." });
@@ -267,6 +266,7 @@ app.post("/orders", authMiddleware, async (req, res) => {
         data: {
           userId,
           totalAmount: totalOrderPrice,
+          status: status || "PENDING",
           items: {
             create: orderItemsData,
           },
@@ -386,6 +386,42 @@ app.get(
     } catch (error) {
       console.error("Erro ao carregar estatísticas do dashboard:", error);
       res.status(500).json({ error: "Erro ao carregar métricas." });
+    }
+  },
+);
+
+app.patch(
+  "/orders/:id/status",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      const allowedAdminStatuses = ["SHIPPED", "CANCELLED"];
+
+      if (!status || !allowedAdminStatuses.includes(status)) {
+        return res.status(400).json({
+          error:
+            "Ação não permitida. O admin só pode alterar o status para ENVIADO (SHIPPED) ou CANCELADO (CANCELLED).",
+        });
+      }
+
+      const updatedOrder = await prisma.order.update({
+        where: { id: String(id) },
+        data: { status: status },
+      });
+
+      res.json({
+        message: "Status atualizado com sucesso!",
+        order: updatedOrder,
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar status do pedido:", error);
+      res
+        .status(500)
+        .json({ error: "Erro ao atualizar status no banco de dados." });
     }
   },
 );

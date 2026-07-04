@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, User, DollarSign, ShoppingBag } from "lucide-react";
+import { Calendar, User, DollarSign } from "lucide-react";
 
 interface OrderItem {
   id: string;
@@ -28,16 +28,16 @@ interface Order {
 interface OrderCardProps {
   order: Order;
   isDark: boolean;
+  onStatusChange: (orderId: string, newStatus: string) => void;
 }
 
-export function OrderCard({ order, isDark }: OrderCardProps) {
+export function OrderCard({ order, isDark, onStatusChange }: OrderCardProps) {
   return (
     <div
       className={`border rounded-2xl overflow-hidden shadow-xs transition-colors duration-200 ${
         isDark ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
       }`}
     >
-      {/* Topo do card */}
       <div
         className={`p-4 md:p-6 border-b flex flex-wrap items-center justify-between gap-4 ${
           isDark
@@ -74,9 +74,40 @@ export function OrderCard({ order, isDark }: OrderCardProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-2.5 py-1 rounded-full font-medium uppercase tracking-wider">
-            {order.status}
-          </span>
+          {/* ✨ Controle visual restrito: O admin só gerencia a partir do PAID (Pago) */}
+          {order.status === "PAID" ? (
+            <select
+              defaultValue={order.status}
+              onChange={(e) => onStatusChange(order.id, e.target.value)}
+              className={`text-xs px-2.5 py-1.5 rounded-full font-medium uppercase tracking-wider border cursor-pointer ${
+                isDark
+                  ? "bg-zinc-950 border-zinc-700 text-zinc-300"
+                  : "bg-white border-zinc-200 text-zinc-600"
+              }`}
+            >
+              <option value="PAID" disabled>
+                Pago (Aguardando Envio)
+              </option>
+              <option value="SHIPPED">Enviado</option>
+              <option value="CANCELLED">Cancelar Pedido</option>
+            </select>
+          ) : order.status === "PENDING" ? (
+            /* Fallback estático para se nascer algum pendente */
+            <span className="text-xs bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-2.5 py-1 rounded-full font-medium uppercase tracking-wider">
+              Pendente
+            </span>
+          ) : (
+            <span
+              className={`text-xs px-2.5 py-1 rounded-full font-medium uppercase tracking-wider border ${
+                order.status === "SHIPPED"
+                  ? "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
+                  : "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
+              }`}
+            >
+              {order.status === "SHIPPED" ? "Enviado" : "Cancelado"}
+            </span>
+          )}
+
           <div className="flex items-center gap-1 text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-lg">
             <DollarSign className="h-4 w-4" />
             <span>{(order.totalAmount ?? order.total ?? 0).toFixed(2)}</span>
@@ -84,7 +115,6 @@ export function OrderCard({ order, isDark }: OrderCardProps) {
         </div>
       </div>
 
-      {/* Itens */}
       <div
         className={`p-4 md:p-6 divide-y bg-transparent ${isDark ? "divide-zinc-800" : "divide-zinc-100"}`}
       >

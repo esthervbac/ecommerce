@@ -25,12 +25,12 @@ export function authMiddleware(
   }
 
   const [scheme, token] = parts;
-  if (!/^Bearer$/i.test(scheme)) {
+  if (!scheme || !/^Bearer$/i.test(scheme) || !token) {
     return res.status(401).json({ error: "Token malformado." });
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
+    const decoded = jwt.verify(token, JWT_SECRET) as unknown as TokenPayload;
 
     req.user = {
       id: decoded.userId,
