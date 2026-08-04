@@ -4,6 +4,11 @@ This is a complete e-commerce project structured as a **monorepo**, containing a
 
 ---
 
+## To access the apps:
+
+- Ecommerce store: https://esthervbac.github.io/ecommerce/ / https://ecommerce-omega-lake-57.vercel.app/
+- Ecommerce Admin Dashboard: https://ecommerce-admin-dashboard-kappa-five.vercel.app/
+
 ## 📁 Project Structure
 
 The repository is divided into the following main modules inside the `apps/` directory:
