@@ -2,6 +2,7 @@
 
 import { LayoutDashboard, Package, ShoppingBag, LogOut } from "lucide-react";
 import { ThemeToggle } from "../../components/ThemeToggle";
+import { useRouter } from "next/navigation";
 
 interface SidebarProps {
   isDark: boolean;
@@ -9,17 +10,12 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isDark, currentPath }: SidebarProps) {
-  const handleLogout = () => {
-    localStorage.removeItem("@ecommerce:token");
-    localStorage.removeItem("@ecommerce:user");
-    window.location.href = "/";
-  };
+  const router = useRouter();
 
-  const adminName =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("@ecommerce:user") || "{}").name ||
-        "Admin"
-      : "Admin";
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push("/");
+  };
 
   return (
     <aside

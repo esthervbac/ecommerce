@@ -1,14 +1,19 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { InputField } from "../components/InputField";
+
+export interface LoginFormData {
+  email: string;
+  password: string;
+}
 
 interface LoginFormProps {
   isDark: boolean;
   loading: boolean;
   apiError: string | null;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: LoginFormData) => void;
 }
 
 export function LoginForm({
@@ -21,7 +26,7 @@ export function LoginForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+  } = useForm<LoginFormData>();
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

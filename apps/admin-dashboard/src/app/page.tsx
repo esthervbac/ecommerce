@@ -1,65 +1,40 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { ThemeToggle } from "./components/ThemeToggle";
-import { LoginForm } from "./components/LoginForm";
+import { LoginForm, LoginFormData } from "./components/LoginForm";
+import { authService } from "../services/auth";
+import { useTheme } from "../context/ThemeContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [isDark, setIsDark] = useState(false);
+  const { isDark } = useTheme();
+  const router = useRouter();
 
-  useEffect(() => {
-    const checkTheme = () => {
-      const isDarkMode =
-        document.documentElement.classList.contains("dark") ||
-        localStorage.getItem("theme") === "dark";
-      setIsDark(isDarkMode);
-    };
-
-    checkTheme();
-
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  const handleLoginSubmit = async (data: any) => {
+  const handleLoginSubmit = async (data: LoginFormData) => {
     setLoading(true);
     setApiError(null);
 
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        email: data.email,
-        password: data.password,
-      });
-
+      const response = await axios.post(`${API_URL}/auth/login`, data);
       const { token, user } = response.data;
 
       if (user.role !== "ADMIN") {
-        setApiError(
-          "Acesso negado. Este painel é exclusivo para administradores.",
-        );
+        setApiError("Acesso negado. Apenas administradores.");
         setLoading(false);
         return;
       }
 
-      localStorage.setItem("@ecommerce:token", token);
-      localStorage.setItem("@ecommerce:user", JSON.stringify(user));
-
-      window.location.href = "/dashboard";
+      authService.setAuthData(token, user);
+      router.push("/dashboard");
     } catch (error: any) {
-      console.error(error);
       setApiError(
-        error.response?.data?.message ||
-          "Erro ao conectar com o servidor. Tente novamente.",
+        error.response?.data?.message || "Erro ao conectar com o servidor.",
       );
     } finally {
       setLoading(false);
