@@ -4,8 +4,10 @@ const isGitHubPages =
 
 const nextConfig = {
   output: "export",
-  basePath: process.env.NEXT_PUBLIC_BASE_PATH || "",
-  assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || "",
+  basePath:
+    process.env.NEXT_PUBLIC_BASE_PATH || (isGitHubPages ? "/ecommerce" : ""),
+  assetPrefix:
+    process.env.NEXT_PUBLIC_BASE_PATH || (isGitHubPages ? "/ecommerce/" : ""),
   images: {
     unoptimized: true,
   },
