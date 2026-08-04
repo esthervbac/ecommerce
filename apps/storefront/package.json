@@ -5,11 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev -p 3002",
-    "build": "next build",
+    "build": "NEXT_PUBLIC_BASE_PATH='/ecommerce' next build",
     "start": "next start",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d out"
+    "deploy": "next build && npx gh-pages -d out",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
