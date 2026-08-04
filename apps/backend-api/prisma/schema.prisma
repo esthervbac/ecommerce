@@ -1,0 +1,80 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. Controle de Usuários e Permissões
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // Para login seguro
+  name      String
+  role      Role     @default(USER) 
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 2. Categorias de Produtos
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  slug      String    @unique 
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+// 3. Catálogo de Produtos e Estoque
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  description String
+  price       Float       
+  stock       Int         
+  imageUrl    String?     
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[] 
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// 4. Status do Pedido
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  CANCELLED
+}
+
+// 5. Cabeçalho do Pedido
+model Order {
+  id          String      @id @default(uuid())
+  totalAmount Float       
+  status      OrderStatus @default(PENDING)
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// 6. Itens de cada Pedido (Tabela Pivot)
+model OrderItem {
+  id        String   @id @default(uuid())
+  quantity  Int      
+  price     Float    
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+}
