@@ -32,6 +32,31 @@ To test authentication and checkout flows across the applications, use the follo
 
 ---
 
+## 🔌 Backend API Routes
+
+Here is the list of available endpoints in the backend API:
+
+### Authentication (`/auth`)
+
+- `POST /auth/signup` - Register a new user account.
+- `POST /auth/login` - Authenticate a user and return a JWT token.
+
+### Products (`/products`)
+
+- `GET /products` - List all available products.
+- `GET /products/:id` - Retrieve details of a specific product.
+- `POST /products` - Create a new product (Admin only).
+- `PUT /products/:id` - Update an existing product (Admin only).
+- `DELETE /products/:id` - Remove a product (Admin only).
+
+### Orders (`/orders`)
+
+- `GET /orders` - List all orders (User-specific or all for admins).
+- `POST /orders` - Create a new order/checkout (Requires authentication).
+- `PATCH /orders/:id/status` - Update an order's status (Admin only).
+
+---
+
 ## 🛠️ How to Run the Project
 
 Since this is a monorepo, each application has its own directory and dependencies. Follow the steps below to run the environment:
