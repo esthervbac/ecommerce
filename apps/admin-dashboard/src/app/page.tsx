@@ -34,7 +34,9 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (error: any) {
       setApiError(
-        error.response?.data?.message || "Erro ao conectar com o servidor.",
+        error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Erro ao conectar com o servidor.",
       );
     } finally {
       setLoading(false);
